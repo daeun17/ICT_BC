@@ -26,14 +26,14 @@ async function main() {
         const wallet = await Wallets.newFileSystemWallet(walletPath);
         console.log(`Wallet path: ${walletPath}`);
 
-        // Check to see if we've already enrolled the user.
+        // Check to see if we've already enrolled the user. (user 인증서 존재 확인)
         const userIdentity = await wallet.get('appUser');
         if (userIdentity) {
             console.log('An identity for the user "appUser" already exists in the wallet');
             return;
         }
 
-        // Check to see if we've already enrolled the admin user.
+        // Check to see if we've already enrolled the admin user. (admin 인증서 있는지 확인 -> 없으면 오류)
         const adminIdentity = await wallet.get('admin');
         if (!adminIdentity) {
             console.log('An identity for the admin user "admin" does not exist in the wallet');
@@ -41,16 +41,19 @@ async function main() {
             return;
         }
 
-        // build a user object for authenticating with the CA
+        //User 인증서 생성 
+        // build a user object for authenticating with the CA 
         const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
         const adminUser = await provider.getUserContext(adminIdentity, 'admin');
 
         // Register the user, enroll the user, and import the new identity into the wallet.
+        //사업부 등록
         const secret = await ca.register({
             affiliation: 'org1.department1',
             enrollmentID: 'appUser',
             role: 'client'
         }, adminUser);
+        //실제 CA로 부터 인증서 발급받고 저장
         const enrollment = await ca.enroll({
             enrollmentID: 'appUser',
             enrollmentSecret: secret

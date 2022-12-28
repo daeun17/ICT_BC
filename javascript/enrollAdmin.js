@@ -13,28 +13,28 @@ const path = require('path');
 
 async function main() {
     try {
-        // load the network configuration
+        // load the network configuration 연결 설정 (ca의 연결 주소)
         const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
         const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
-        // Create a new CA client for interacting with the CA.
+        // Create a new CA client for interacting with the CA. (CA주소를 가져와서 실제 fabric CA 서비스에 연결)
         const caInfo = ccp.certificateAuthorities['ca.org1.example.com'];
         const caTLSCACerts = caInfo.tlsCACerts.pem;
         const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
 
-        // Create a new file system based wallet for managing identities.
+        // Create a new file system based wallet for managing identities. (wallet dir 생성)
         const walletPath = path.join(process.cwd(), 'wallet');
         const wallet = await Wallets.newFileSystemWallet(walletPath);
         console.log(`Wallet path: ${walletPath}`);
 
-        // Check to see if we've already enrolled the admin user.
+        // Check to see if we've already enrolled the admin user. (기존에 admin 인증서가 존재하는지 확인)
         const identity = await wallet.get('admin');
         if (identity) {
             console.log('An identity for the admin user "admin" already exists in the wallet');
             return;
         }
 
-        // Enroll the admin user, and import the new identity into the wallet.
+        // Enroll the admin user, and import the new identity into the wallet. (실제로 admin 인증서를 발급)
         const enrollment = await ca.enroll({ enrollmentID: 'admin', enrollmentSecret: 'adminpw' });
         const x509Identity = {
             credentials: {
